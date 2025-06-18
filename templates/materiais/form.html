@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} - Sistema de Gestão Acadêmica{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{{ titulo }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.titulo.label(class="form-label") }}
+                        {{ form.titulo(class="form-control", placeholder="Título do material") }}
+                        {% if form.titulo.errors %}
+                            <div class="text-danger">
+                                {% for error in form.titulo.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.descricao.label(class="form-label") }}
+                        {{ form.descricao(class="form-control", rows=3, placeholder="Descrição detalhada do material") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.tipo.label(class="form-label") }}
+                        {{ form.tipo(class="form-select", onchange="toggleFields()") }}
+                    </div>
+                    
+                    <div id="arquivo-field" class="mb-3" style="display: none;">
+                        {{ form.arquivo.label(class="form-label") }}
+                        {{ form.arquivo(class="form-control") }}
+                        <small class="text-muted">Formatos aceitos: PDF, DOC, PPT, XLS (Max 5MB)</small>
+                    </div>
+                    
+                    <div id="url-field" class="mb-3" style="display: none;">
+                        {{ form.url.label(class="form-label") }}
+                        {{ form.url(class="form-control", placeholder="https://exemplo.com/material") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.disciplina_id.label(class="form-label") }}
+                        {{ form.disciplina_id(class="form-select") }}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('listar_materiais') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleFields() {
+    const tipo = document.querySelector('select[name="tipo"]').value;
+    
+    document.getElementById('arquivo-field').style.display = tipo === 'arquivo' ? 'block' : 'none';
+    document.getElementById('url-field').style.display = tipo === 'link' ? 'block' : 'none';
+    
+    // Tornar campos obrigatórios conforme o tipo selecionado
+    const arquivoInput = document.querySelector('input[name="arquivo"]');
+    const urlInput = document.querySelector('input[name="url"]');
+    
+    if (tipo === 'arquivo') {
+        arquivoInput.required = true;
+        urlInput.required = false;
+    } else if (tipo === 'link') {
+        arquivoInput.required = false;
+        urlInput.required = true;
+    } else {
+        arquivoInput.required = false;
+        urlInput.required = false;
+    }
+}
+
+// Chamar a função ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    toggleFields();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Alunos - Sistema de Gestão Acadêmica{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">Alunos</h1>
+        <p class="text-muted">Gerenciar alunos cadastrados</p>
+    </div>
+    <a href="{{ url_for('novo_aluno') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Novo Aluno
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if alunos %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Telefone</th>
+                        <th>Turma</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for aluno in alunos %}
+                    <tr>
+                        <td>{{ aluno.nome }}</td>
+                        <td>{{ aluno.email }}</td>
+                        <td>{{ aluno.telefone or '-' }}</td>
+                        <td>{{ aluno.turma.nome if aluno.turma else '-' }}</td>
+                        <td>
+                            <a href="{{ url_for('editar_aluno', id=aluno.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form style="display: inline;" method="POST" action="{{ url_for('deletar_aluno', id=aluno.id) }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Tem certeza?')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-user-graduate fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhum aluno cadastrado</h5>
+            <p class="text-muted">Cadastre o primeiro aluno para começar.</p>
+            <a href="{{ url_for('novo_aluno') }}" class="btn btn-primary">Cadastrar Aluno</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

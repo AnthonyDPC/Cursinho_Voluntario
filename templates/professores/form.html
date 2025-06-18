@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} - Sistema de Gestão Acadêmica{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{{ titulo }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Informações Pessoais -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.nome.label(class="form-label") }}
+                            {{ form.nome(class="form-control", placeholder="Nome completo") }}
+                            {% if form.nome.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.nome.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control", placeholder="email@exemplo.com") }}
+                            {% if form.email.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.email.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Documentos -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">CPF</label>
+                            <input type="text" class="form-control" name="cpf" placeholder="000.000.000-00" 
+                                   pattern="\d{3}\.\d{3}\.\d{3}-\d{2}" required>
+                            <small class="form-text text-muted">Formato: 000.000.000-00</small>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">RG</label>
+                            <input type="text" class="form-control" name="rg" placeholder="00.000.000-0">
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            {{ form.telefone.label(class="form-label") }}
+                            {{ form.telefone(class="form-control", placeholder="(00) 00000-0000") }}
+                        </div>
+                    </div>
+                    
+                    <!-- Endereço -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Endereço</label>
+                            <input type="text" class="form-control" name="endereco" placeholder="Rua, número">
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Bairro</label>
+                            <input type="text" class="form-control" name="bairro">
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Cidade</label>
+                            <input type="text" class="form-control" name="cidade">
+                        </div>
+                    </div>
+                    
+                    <!-- Dados Profissionais -->
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            {{ form.especialidade.label(class="form-label") }}
+                            {{ form.especialidade(class="form-control", placeholder="Ex: Matemática, Física, etc.") }}
+                        </div>
+                    </div>
+                    
+                    <!-- Seção de Login -->
+                    <div class="card mb-3" style="background-color: #f8f9fa;">
+                        <div class="card-header py-2">
+                            <h6 class="mb-0 text-muted">
+                                <i class="fas fa-key me-2"></i>Configurações de Login
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="habilitar_login" name="habilitar_login" 
+                                       onchange="toggleLoginFields()" {% if form.senha.data %}checked{% endif %}>
+                                <label class="form-check-label" for="habilitar_login">
+                                    <strong>Permitir que o professor faça login no sistema</strong>
+                                </label>
+                                <div class="form-text">
+                                    Marque esta opção para que o professor possa acessar o sistema
+                                </div>
+                            </div>
+                            
+                            <div id="login_fields" style="display: {% if form.senha.data %}block{% else %}none{% endif %};">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.senha.label(class="form-label") }}
+                                        {{ form.senha(class="form-control", placeholder="Mínimo 6 caracteres") }}
+                                        {% if form.senha.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.senha.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Confirmar Senha</label>
+                                        <input type="password" class="form-control" id="confirmar_senha" 
+                                               name="confirmar_senha" placeholder="Digite a senha novamente">
+                                        <div id="senha_erro" class="text-danger" style="display: none;">
+                                            <small>As senhas não coincidem</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info alert-sm mb-0">
+                                    <small>
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Com login habilitado, o professor poderá acessar todas as funcionalidades do sistema.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('listar_professores') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="btn_salvar">
+                            <i class="fas fa-save me-1"></i>Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleLoginFields() {
+    const checkbox = document.getElementById('habilitar_login');
+    const loginFields = document.getElementById('login_fields');
+    const senhaField = document.querySelector('input[name="senha"]');
+    
+    if (checkbox.checked) {
+        loginFields.style.display = 'block';
+        senhaField.required = true;
+    } else {
+        loginFields.style.display = 'none';
+        senhaField.required = false;
+        senhaField.value = '';
+        document.getElementById('confirmar_senha').value = '';
+    }
+}
+
+// Validação de confirmação de senha
+document.getElementById('confirmar_senha').addEventListener('input', function() {
+    validatePassword();
+});
+
+document.querySelector('input[name="senha"]').addEventListener('input', function() {
+    validatePassword();
+});
+
+function validatePassword() {
+    const senha = document.querySelector('input[name="senha"]').value;
+    const confirmarSenha = document.getElementById('confirmar_senha').value;
+    const erroDiv = document.getElementById('senha_erro');
+    const btnSalvar = document.getElementById('btn_salvar');
+    const habilitarLogin = document.getElementById('habilitar_login').checked;
+    
+    if (habilitarLogin && confirmarSenha && senha !== confirmarSenha) {
+        erroDiv.style.display = 'block';
+        btnSalvar.disabled = true;
+    } else {
+        erroDiv.style.display = 'none';
+        btnSalvar.disabled = false;
+    }
+}
+
+// Verificar se é edição e já tem senha definida
+document.addEventListener('DOMContentLoaded', function() {
+    // Se estiver editando e o professor já tiver senha, marcar o checkbox
+    const senhaField = document.querySelector('input[name="senha"]');
+    if (senhaField && senhaField.value) {
+        document.getElementById('habilitar_login').checked = true;
+        toggleLoginFields();
+        senhaField.placeholder = 'Deixe em branco para manter a senha atual';
+        senhaField.required = false;
+    }
+    
+    // Validar ao carregar a página
+    validatePassword();
+});
+</script>
+
+<style>
+.alert-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.card .card-header h6 {
+    color: #6c757d;
+}
+
+.form-check-label {
+    cursor: pointer;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} - Sistema de Gestão Acadêmica{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{{ titulo }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.disciplina_id.label(class="form-label") }}
+                        {{ form.disciplina_id(class="form-select") }}
+                        {% if form.disciplina_id.errors %}
+                            <div class="text-danger">
+                                {% for error in form.disciplina_id.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.aluno_id.label(class="form-label") }}
+                        <select class="form-select" id="aluno_id" name="aluno_id" required>
+                            <option value="">Selecione uma disciplina primeiro</option>
+                        </select>
+                        {% if form.aluno_id.errors %}
+                            <div class="text-danger">
+                                {% for error in form.aluno_id.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.tipo.label(class="form-label") }}
+                            {{ form.tipo(class="form-select") }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.valor.label(class="form-label") }}
+                            {{ form.valor(class="form-control", step="0.1", min="0", max="10") }}
+                            {% if form.valor.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.valor.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('listar_notas') }}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function() {
+    // Carregar alunos quando a disciplina for selecionada
+    $('#disciplina_id').change(function() {
+        var disciplina_id = $(this).val();
+        if (disciplina_id) {
+            $.getJSON('/notas/carregar-alunos/' + disciplina_id, function(data) {
+                var options = '<option value="">Selecione um aluno</option>';
+                $.each(data, function(key, aluno) {
+                    options += '<option value="' + aluno.id + '">' + aluno.nome + ' (RA: ' + aluno.ra + ')</option>';
+                });
+                $('#aluno_id').html(options);
+            });
+        } else {
+            $('#aluno_id').html('<option value="">Selecione uma disciplina primeiro</option>');
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

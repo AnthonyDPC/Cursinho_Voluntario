@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Sistema de Gestão Acadêmica{% endblock %}</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+      :root {
+        --primary-color: #eae366;
+        --secondary-color: #a2814b;
+        --accent-color: #379091;
+        --danger-color: #e74c3c;
+        --success-color: #2ecc71;
+      }
+
+      .sidebar {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color) 0%,
+          var(--secondary-color) 100%
+        );
+        min-height: 100vh;
+        transition: all 0.3s;
+      }
+
+      .sidebar .nav-link {
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin: 5px 0;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+      }
+
+      .sidebar .nav-link i {
+        margin-right: 10px;
+        width: 20px;
+        text-align: center;
+      }
+
+      .sidebar .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+        transform: translateX(5px);
+      }
+
+      .sidebar .nav-link.active {
+        background-color: rgba(255, 255, 255, 0.25);
+        font-weight: 500;
+      }
+
+      .main-content {
+        background-color: #f8f9fa;
+        min-height: 100vh;
+      }
+
+      .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-header {
+        background-color: white;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        font-weight: 600;
+      }
+
+      .btn-primary {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color) 0%,
+          var(--secondary-color) 100%
+        );
+        border: none;
+        padding: 8px 16px;
+      }
+
+      .btn-primary:hover {
+        opacity: 0.9;
+      }
+
+      .user-info {
+        background-color: rgba(255, 255, 255, 0.15);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(5px);
+      }
+
+      .user-info .user-name {
+        color: white;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .user-info .user-type {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .navbar-top {
+        background: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        padding: 15px 0;
+      }
+
+      .badge-primary {
+        background-color: var(--primary-color);
+      }
+
+      /* Novos estilos para materiais */
+      .material-item {
+        border-left: 3px solid var(--primary-color);
+        transition: all 0.2s;
+      }
+
+      .material-item:hover {
+        background-color: rgba(234, 227, 102, 0.1);
+      }
+
+      .material-icon {
+        font-size: 1.5rem;
+        color: var(--secondary-color);
+      }
+
+      @media (max-width: 768px) {
+        .sidebar {
+          min-height: auto;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container-fluid">
+      <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 px-0 sidebar">
+          <div class="p-3">
+            <h4 class="text-white mb-4 d-flex align-items-center">
+              <i class="fas fa-graduation-cap me-2"></i> Sanquim
+            </h4>
+
+            <!-- User Info -->
+            <div class="user-info">
+              <div class="user-name">{{ session.user_nome }}</div>
+              <div class="user-type">{{ session.user_tipo|capitalize }}</div>
+              <div
+                class="mt-2 d-flex justify-content-between align-items-center"
+              >
+                <a
+                  href="{{ url_for('logout') }}"
+                  class="btn btn-logout btn-sm"
+                  style="color: white"
+                >
+                  <i class="fas fa-sign-out-alt me-1"></i>Sair
+                </a>
+              </div>
+            </div>
+
+            <!-- Menu para diretores -->
+            <nav class="nav flex-column mt-3">
+              {% if session.user_tipo != 'admin' %}
+              <a
+                class="nav-link {% if request.endpoint == 'index' %}active{% endif %}"
+                href="{{ url_for('index') }}"
+              >
+                <i class="fas fa-home"></i> Dashboard
+              </a>
+              {% endif %} {% if session.user_tipo in ['admin', 'secretaria'] %}
+              <a
+                class="nav-link {% if request.endpoint == 'listar_alunos' %}active{% endif %}"
+                href="{{ url_for('listar_alunos') }}"
+              >
+                <i class="fas fa-user-graduate"></i> Alunos
+              </a>
+
+              <a
+                class="nav-link {% if request.endpoint == 'listar_professores' %}active{% endif %}"
+                href="{{ url_for('listar_professores') }}"
+              >
+                <i class="fas fa-chalkboard-teacher"></i> Professores
+              </a>
+              <a
+                class="nav-link {% if request.endpoint == 'listar_disciplinas' %}active{% endif %}"
+                href="{{ url_for('listar_disciplinas') }}"
+              >
+                <i class="fas fa-book"></i> Disciplinas
+              </a>
+              <a
+                class="nav-link {% if request.endpoint == 'listar_turmas' %}active{% endif %}"
+                href="{{ url_for('listar_turmas') }}"
+              >
+                <i class="fas fa-users"></i> Turmas
+              </a>
+              {% endif %}
+
+              <!-- Menu para professores -->
+              {% if session.user_tipo == 'professor' %}
+              <a
+                class="nav-link {% if request.endpoint == 'calendario_professor' %}active{% endif %}"
+                href="{{ url_for('calendario_professor') }}"
+              >
+                <i class="fas fa-calendar"></i> Registro de Aulas
+              </a>
+              <a
+                class="nav-link {% if request.endpoint == 'listar_faltas_professor' %}active{% endif %}"
+                href="{{ url_for('listar_faltas_professor') }}"
+              >
+                <i class="fas fa-user-times"></i> Lançar Faltas
+              </a>
+              <a
+                class="nav-link {% if request.endpoint == 'listar_notas' %}active{% endif %}"
+                href="{{ url_for('listar_notas') }}"
+              >
+                <i class="fas fa-clipboard-list"></i> Lançar Notas
+              </a>
+              <a
+                class="nav-link {% if request.endpoint == 'listar_materiais' %}active{% endif %}"
+                href="{{ url_for('listar_materiais') }}"
+              >
+                <i class="fas fa-book-open"></i> Materiais Didáticos
+              </a>
+              {% endif %}
+
+              <!-- Menu para alunos -->
+              {% if session.user_tipo == 'aluno' %}
+              <a
+                class="nav-link {% if request.endpoint == 'calendario_aluno' %}active{% endif %}"
+                href="{{ url_for('calendario_aluno') }}"
+              >
+                <i class="fas fa-calendar"></i> Minhas Aulas
+              <a
+                class="nav-link {% if request.endpoint == 'listar_faltas_aluno' %}active{% endif %}"
+                href="{{ url_for('listar_faltas_aluno') }}"
+              >
+                <i class="fas fa-user-times"></i> Minhas Faltas
+              </a>
+              <a
+                class="nav-link {% if request.endpoint == 'listar_notas' %}active{% endif %}"
+                href="{{ url_for('listar_notas') }}"
+              >
+                <i class="fas fa-clipboard-list"></i> Minhas Notas
+              </a>
+              <a
+                class="nav-link {% if request.endpoint == 'ver_materiais' %}active{% endif %}"
+                href="{{ url_for('ver_materiais') }}"
+              >
+                <i class="fas fa-book-open"></i> Materiais
+              </a>
+              {% endif %}
+
+              <!-- Menu Usuários apenas para Admin -->
+              {% if session.user_tipo == 'admin' %}
+              <a
+                class="nav-link {% if request.endpoint == 'listar_cursos' %}active{% endif %}"
+                href="{{ url_for('listar_cursos') }}"
+              >
+                <i class="fas fa-graduation-cap"></i> Cursos
+              </a>
+              <hr style="color: rgba(255, 255, 255, 0.3); margin: 20px 0" />
+              <div class="text-white-50 small mb-2 px-3">ADMINISTRAÇÃO</div>
+              <a
+                class="nav-link {% if request.endpoint == 'listar_usuarios' %}active{% endif %}"
+                href="{{ url_for('listar_usuarios') }}"
+              >
+                <i class="fas fa-users-cog"></i> Usuários
+              </a>
+              {% endif %}
+            </nav>
+          </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 main-content" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
+          <!-- Top Navbar -->
+          <div class="navbar-top">
+            <div class="container-fluid">
+              <div class="row align-items-center">
+                <div class="col">
+                  <h5 class="mb-0">
+                    {% block page_title %}Dashboard{% endblock %}
+                  </h5>
+                </div>
+                <div class="col-auto">
+                  <span class="text-muted small">
+                    <i class="fas fa-clock me-1"></i>
+                    <span id="current-time"></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %} {%
+            if messages %} {% for category, message in messages %}
+            <div
+              class="alert alert-{{ category }} alert-dismissible fade show"
+              role="alert"
+            >
+              {{ message }}
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+              ></button>
+            </div>
+            {% endfor %} {% endif %} {% endwith %}
+
+            <!-- Page Content -->
+            {% block content %}{% endblock %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script para atualizar horário -->
+    <script>
+      function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        document.getElementById("current-time").textContent = timeString;
+      }
+
+      // Atualizar horário a cada minuto
+      updateTime();
+      setInterval(updateTime, 60000);
+    </script>
+
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

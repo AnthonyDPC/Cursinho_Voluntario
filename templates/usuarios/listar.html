@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block page_title %}Usuários{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-users-cog me-2"></i>Usuários do Sistema</h2>
+    <a href="{{ url_for('novo_usuario') }}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Novo Usuário
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if usuarios %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Tipo</th>
+                        <th>Status</th>
+                        <th>Criado em</th>
+                        <th width="120">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr>
+                        <td>
+                            <strong>{{ usuario.nome }}</strong>
+                        </td>
+                        <td>{{ usuario.email }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'primary' if usuario.tipo == 'admin' else 'secondary' if usuario.tipo == 'professor' else 'info' }}">
+                                {{ usuario.tipo.title() }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if usuario.ativo else 'danger' }}">
+                                {{ 'Ativo' if usuario.ativo else 'Inativo' }}
+                            </span>
+                        </td>
+                        <td>{{ usuario.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary btn-sm" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if usuario.id != session.user_id %}
+                                <button class="btn btn-outline-danger btn-sm" title="Excluir" onclick="confirmarExclusao('{{ usuario.nome }}', {{ usuario.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-users-cog fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhum usuário encontrado</h5>
+            <p class="text-muted">Clique no botão "Novo Usuário" para começar.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir o usuário <strong id="nomeUsuario"></strong>?</p>
+                <p class="text-danger small">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formExclusao" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmarExclusao(nome, id) {
+    document.getElementById('nomeUsuario').textContent = nome;
+    document.getElementById('formExclusao').action = '/usuarios/' + id + '/deletar';
+    new bootstrap.Modal(document.getElementById('confirmModal')).show();
+}
+</script>
+{% endblock %}

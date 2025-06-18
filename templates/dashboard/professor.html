@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard do Professor{% endblock %}
+{% block content %}
+
+<h2 class="mb-4">Bem-vindo, Prof. {{ professor.nome }}</h2>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card p-3 mb-4">
+            <h5 class="card-title">Informações</h5>
+            <p><strong>Email:</strong> {{ professor.email }}</p>
+            <p><strong>Especialidade:</strong> {{ professor.especialidade or 'Não informada' }}</p>
+        </div>
+
+        <div class="card p-3 mb-4">
+            <h5 class="card-title">Disciplinas Ministradas</h5>
+            {% if disciplinas %}
+            <ul class="list-group list-group-flush">
+                {% for disc in disciplinas %}
+                <li class="list-group-item">{{ disc.nome }} ({{ disc.codigo }})</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted">Nenhuma disciplina atribuída.</p>
+            {% endif %}
+        </div>
+        <div class="card p-3 mb-4">
+            <h5 class="card-title">Alunos por Disciplina</h5>
+            {% for nome_disc, alunos in alunos_por_disciplina.items() %}
+            <h6 class="mt-3 text-primary">{{ nome_disc }}</h6>
+            {% if alunos %}
+            <ul class="list-group list-group-flush mb-3">
+                {% for aluno in alunos %}
+                <li class="list-group-item">{{ aluno.nome }} ({{ aluno.email }})</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted">Nenhum aluno registrado nessa disciplina.</p>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="card p-3">
+            <h5 class="card-title">Faltas por Disciplina</h5>
+            {% for nome_disc, faltas in faltas_por_disciplina.items() %}
+            <h6 class="mt-3 text-danger">{{ nome_disc }}</h6>
+            {% if faltas %}
+            <table class="table table-sm mb-4">
+                <thead>
+                    <tr>
+                        <th>Aluno</th>
+                        <th>Data</th>
+                        <th>Motivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for falta in faltas %}
+                    <tr>
+                        <td>{{ falta.aluno.nome }}</td>
+                        <td>{{ falta.data.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ falta.motivo or 'Não informado' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">Nenhuma falta registrada nessa disciplina.</p>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
