@@ -1459,26 +1459,6 @@ def minhas_aulas():
                          aulas_por_disciplina=aulas_por_disciplina,
                          total_aulas=len(aulas))
 
-# Listar aulas registradas pelo professor
-@app.route('/aulas')
-@login_required
-def listar_aulas():
-    if session.get('user_tipo') != 'professor':
-        flash('Acesso negado!', 'error')
-        return redirect(url_for('index'))
-
-    professor_id = session.get('user_id')
-    aulas = Aula.query.filter_by(professor_id=professor_id).order_by(Aula.data.desc()).all()
-    
-    # Stats para os cards
-    total_aulas = len(aulas)
-    disciplinas_com_aulas = len(set(a.disciplina_id for a in aulas))
-    
-    return render_template('aulas/listar.html', 
-                         aulas=aulas,
-                         total_aulas=total_aulas,
-                         disciplinas_com_aulas=disciplinas_com_aulas)
-
 # Registrar uma nova aula
 @app.route('/aulas/registrar', methods=['GET', 'POST'])
 @login_required
@@ -1506,7 +1486,7 @@ def registrar_aula():
             db.session.add(nova_aula)
             db.session.commit()
             flash('Aula registrada com sucesso!', 'success')
-            return redirect(url_for('listar_aulas'))
+            return redirect(url_for('calendario_professor'))
         except Exception as e:
             db.session.rollback()
             flash(f'Erro ao registrar aula: {str(e)}', 'error')
@@ -1521,7 +1501,7 @@ def editar_aula(id):
     # Garante que o professor só pode editar sua própria aula
     if session.get('user_tipo') != 'professor' or aula.professor_id != session.get('user_id'):
         flash('Acesso negado!', 'error')
-        return redirect(url_for('listar_aulas'))
+        return redirect(url_for('calendario_professor'))
 
     form = AulaForm(obj=aula)
     form.disciplina_id.choices = [(d.id, d.nome) for d in Disciplina.query.filter_by(professor_id=session.get('user_id')).all()]
@@ -1536,7 +1516,7 @@ def editar_aula(id):
             aula.disciplina_id = form.disciplina_id.data
             db.session.commit()
             flash('Registro de aula atualizado com sucesso!', 'success')
-            return redirect(url_for('listar_aulas'))
+            return redirect(url_for('calendario_professor'))
         except Exception as e:
             db.session.rollback()
             flash(f'Erro ao atualizar registro: {str(e)}', 'error')
@@ -1550,7 +1530,7 @@ def deletar_aula(id):
     aula = Aula.query.get_or_404(id)
     if session.get('user_tipo') != 'professor' or aula.professor_id != session.get('user_id'):
         flash('Acesso negado!', 'error')
-        return redirect(url_for('listar_aulas'))
+        return redirect(url_for('calendario_professor'))
     
     try:
         db.session.delete(aula)
@@ -1560,7 +1540,7 @@ def deletar_aula(id):
         db.session.rollback()
         flash(f'Erro ao excluir registro: {str(e)}', 'error')
         
-    return redirect(url_for('listar_aulas'))
+    return redirect(url_for('calendario_professor'))
 
 @app.route('/aulas/carregar-datas/<int:disciplina_id>')
 @login_required

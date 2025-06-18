@@ -291,25 +291,6 @@
 
         <!-- Main Content -->
         <div class="col-md-9 col-lg-10 main-content" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
-          <!-- Top Navbar -->
-          <div class="navbar-top">
-            <div class="container-fluid">
-              <div class="row align-items-center">
-                <div class="col">
-                  <h5 class="mb-0">
-                    {% block page_title %}Dashboard{% endblock %}
-                  </h5>
-                </div>
-                <div class="col-auto">
-                  <span class="text-muted small">
-                    <i class="fas fa-clock me-1"></i>
-                    <span id="current-time"></span>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div class="p-4">
             <!-- Flash Messages -->
             {% with messages = get_flashed_messages(with_categories=true) %} {%

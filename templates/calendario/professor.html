@@ -53,6 +53,12 @@
         </div>
       </div>
       <div class="modal-footer">
+        <div>
+            <form id="deleteCalendarForm" method="POST" action="" class="d-inline"
+                  onsubmit="return confirm('Tem certeza que deseja excluir permanentemente este registro de aula?');">
+                <button type="submit" class="btn btn-outline-danger"><i class="fas fa-trash-alt me-1"></i>Excluir</button>
+            </form>
+        </div>
         <a href="#" id="editButton" class="btn btn-primary"><i class="fas fa-edit me-1"></i>Editar Registro</a>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
       </div>
@@ -778,6 +784,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const editButton = document.getElementById('editButton');
             editButton.href = `/aulas/${props.id}/editar`;
+
+            // ✨ ATUALIZA A ACTION DO FORMULÁRIO DE EXCLUSÃO DENTRO DO MODAL ✨
+            const deleteForm = document.getElementById('deleteCalendarForm');
+            deleteForm.action = `/aulas/${props.id}/deletar`;
 
             const obsContainer = document.getElementById('observacoesContainer');
             if (props.observacoes) {
