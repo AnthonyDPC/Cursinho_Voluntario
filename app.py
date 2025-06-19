@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SelectField, TextAreaField, DateField, FloatField, PasswordField, FileField, HiddenField, TimeField
+from wtforms import StringField, SubmitField, IntegerField, SelectField, TextAreaField, DateField, FloatField, PasswordField, FileField, HiddenField, TimeField
 from wtforms.validators import DataRequired, Email, NumberRange, Length, Optional, URL
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, time
@@ -315,7 +315,6 @@ class DisciplinaForm(FlaskForm):
     professor_id = SelectField('Professor', coerce=int, validators=[Optional()])
     turma_id = SelectField('Turma', coerce=int, validators=[Optional()])
 
-
 class MaterialForm(FlaskForm):
     titulo = StringField('Título', validators=[DataRequired()])
     descricao = TextAreaField('Descrição')
@@ -359,13 +358,68 @@ class AulaForm(FlaskForm):
     observacoes = TextAreaField('Observações (opcional)', render_kw={"rows": 3, "placeholder": "Anote informações adicionais, como tarefas passadas, comportamento da turma, etc."}) 
    
 # Em app.py, encontre o FaltaForm e altere o campo 'data'
-
 class FaltaForm(FlaskForm):
     # O campo 'data' foi renomeado e alterado para SelectField
     data_aula = SelectField('Data da Aula', validators=[DataRequired()], choices=[])
     motivo = StringField('Motivo (opcional)', validators=[Length(max=255)])
     aluno_id = SelectField('Aluno', coerce=int, validators=[DataRequired()]) # Alterado de HiddenField para SelectField
     disciplina_id = SelectField('Disciplina', coerce=int, validators=[DataRequired()])
+
+# Novo modelo para Comunicados
+class Comunicado(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String(150), nullable=False)
+    conteudo = db.Column(db.Text, nullable=False)
+    data_publicacao = db.Column(db.DateTime, default=datetime.utcnow)
+    professor_id = db.Column(db.Integer, db.ForeignKey('professor.id'), nullable=False)
+    professor = db.relationship('Professor', backref=db.backref('comunicados', lazy=True))
+
+    def __repr__(self):
+        return f'<Comunicado {self.titulo}>'
+
+# Novo formulário para Comunicados
+class ComunicadoForm(FlaskForm):
+    titulo = StringField('Título do Comunicado', validators=[DataRequired(), Length(max=150)])
+    conteudo = TextAreaField('Conteúdo do Comunicado', validators=[DataRequired()])
+    submit = SubmitField('Enviar Comunicado')
+    
+# Rota para professores enviarem comunicados
+@app.route('/professor/enviar_comunicado', methods=['GET', 'POST'])
+@login_required
+def enviar_comunicado():
+    if session.get('user_tipo') != 'professor':
+        flash('Acesso negado!', 'error')
+        return redirect(url_for('index'))
+    
+    form = ComunicadoForm()
+    if form.validate_on_submit():
+        professor_id = session.get('user_id')
+        novo_comunicado = Comunicado(
+            titulo=form.titulo.data,
+            conteudo=form.conteudo.data,
+            professor_id=professor_id
+        )
+        try:
+            db.session.add(novo_comunicado)
+            db.session.commit()
+            flash('Comunicado enviado com sucesso!', 'success')
+            return redirect(url_for('dashboard_professor')) # Ou outra página de sucesso
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao enviar comunicado: {e}', 'danger')
+    return render_template('comunicados/enviar_comunicado.html', form=form)
+
+# Rota para alunos visualizarem comunicados
+@app.route('/aluno/ver_comunicados')
+@login_required
+def ver_comunicados_aluno():
+    if session.get('user_tipo') != 'aluno':
+        flash('Acesso negado!', 'error')
+        return redirect(url_for('index'))
+    
+    comunicados = Comunicado.query.order_by(Comunicado.data_publicacao.desc()).all()
+    return render_template('comunicados/ver_comunicados_aluno.html', comunicados=comunicados)
+
 
 # Função para inicializar o banco de dados
 def init_db():

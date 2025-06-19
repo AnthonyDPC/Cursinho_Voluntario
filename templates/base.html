@@ -239,6 +239,12 @@
               >
                 <i class="fas fa-book-open"></i> Materiais Didáticos
               </a>
+              <a
+                class="nav-link {% if request.endpoint == 'enviar_comunicado' %}active{% endif %}"
+                href="{{ url_for('enviar_comunicado') }}"
+              >
+                <i class="fas fa-envelope-open-text"></i> Meus Comunicados
+              </a>
               {% endif %}
 
               <!-- Menu para alunos -->
@@ -265,6 +271,12 @@
                 href="{{ url_for('ver_materiais') }}"
               >
                 <i class="fas fa-book-open"></i> Materiais
+              </a>
+              <a
+                class="nav-link {% if request.endpoint == 'ver_comunicados_aluno' %}active{% endif %}"
+                href="{{ url_for('ver_comunicados_aluno') }}"
+              >
+                <i class="fas fa-envelope-open-text"></i> Meus Comunicados
               </a>
               {% endif %}
 

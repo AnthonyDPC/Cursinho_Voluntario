@@ -9,14 +9,14 @@
 
 {% block content %}
 <div class="main-container">
-    <div class="header-section" style="background: var(--secondary-gradient);">
+    <div class="header-section" style="background: var(--primary-gradient);">
         <div class="header-background"></div>
         <div class="header-content d-flex justify-content-between align-items-center flex-wrap">
             <div class="mb-3 mb-md-0">
                 <h1 class="page-title mb-2"><i class="fas fa-calendar-alt me-3"></i>Meu Calendário de Aulas</h1>
                 <p class="page-subtitle"><i class="fas fa-list-ul me-2"></i>Visualize e gerencie suas aulas registradas.</p>
             </div>
-            <a href="{{ url_for('registrar_aula') }}" class="btn-new" style="background: var(--primary-gradient);">
+            <a href="{{ url_for('registrar_aula') }}" class="btn-new" style="background: var(--secondary-gradient);">
                 <i class="fas fa-plus-circle"></i><span>Registrar Nova Aula</span>
             </a>
             
