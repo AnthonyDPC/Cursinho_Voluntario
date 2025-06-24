@@ -365,61 +365,85 @@ class FaltaForm(FlaskForm):
     aluno_id = SelectField('Aluno', coerce=int, validators=[DataRequired()]) # Alterado de HiddenField para SelectField
     disciplina_id = SelectField('Disciplina', coerce=int, validators=[DataRequired()])
 
-# Novo modelo para Comunicados
+# Em app.py, adicione este novo modelo junto aos outros
 class Comunicado(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     titulo = db.Column(db.String(150), nullable=False)
     conteudo = db.Column(db.Text, nullable=False)
     data_publicacao = db.Column(db.DateTime, default=datetime.utcnow)
+    
     professor_id = db.Column(db.Integer, db.ForeignKey('professor.id'), nullable=False)
-    professor = db.relationship('Professor', backref=db.backref('comunicados', lazy=True))
+    # Se turma_id for NULO, o comunicado é para todos os alunos.
+    turma_id = db.Column(db.Integer, db.ForeignKey('turma.id'), nullable=True)
 
-    def __repr__(self):
-        return f'<Comunicado {self.titulo}>'
+    professor = db.relationship('Professor', backref='comunicados')
+    turma = db.relationship('Turma', backref='comunicados')
 
-# Novo formulário para Comunicados
+# Em app.py, adicione este novo formulário
 class ComunicadoForm(FlaskForm):
-    titulo = StringField('Título do Comunicado', validators=[DataRequired(), Length(max=150)])
-    conteudo = TextAreaField('Conteúdo do Comunicado', validators=[DataRequired()])
-    submit = SubmitField('Enviar Comunicado')
-    
-# Rota para professores enviarem comunicados
-@app.route('/professor/enviar_comunicado', methods=['GET', 'POST'])
-@login_required
-def enviar_comunicado():
-    if session.get('user_tipo') != 'professor':
-        flash('Acesso negado!', 'error')
-        return redirect(url_for('index'))
-    
+    titulo = StringField('Título', validators=[DataRequired(), Length(max=150)])
+    conteudo = TextAreaField('Conteúdo do Comunicado', validators=[DataRequired()], render_kw={"rows": 8})
+    # O valor 0 será usado para "Todos os Alunos"
+    turma_id = SelectField('Enviar Para', coerce=int, validators=[DataRequired()])
+
+# Página para o professor escrever um novo comunicado
+@app.route('/comunicados/novo', methods=['GET', 'POST'])
+def novo_comunicado():
     form = ComunicadoForm()
+    professor_id = session.get('user_id')
+
+    # Popula o dropdown com as turmas do professor + uma opção para "Todos"
+    turmas_professor = db.session.query(Turma).join(Disciplina).filter(Disciplina.professor_id == professor_id).distinct().all()
+    form.turma_id.choices = [(0, 'Todos os Alunos')] + [(t.id, t.nome) for t in turmas_professor]
+
     if form.validate_on_submit():
-        professor_id = session.get('user_id')
-        novo_comunicado = Comunicado(
+        turma_id = form.turma_id.data if form.turma_id.data != 0 else None
+        
+        comunicado = Comunicado(
             titulo=form.titulo.data,
             conteudo=form.conteudo.data,
-            professor_id=professor_id
+            professor_id=professor_id,
+            turma_id=turma_id
         )
-        try:
-            db.session.add(novo_comunicado)
-            db.session.commit()
-            flash('Comunicado enviado com sucesso!', 'success')
-            return redirect(url_for('dashboard_professor')) # Ou outra página de sucesso
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Erro ao enviar comunicado: {e}', 'danger')
-    return render_template('comunicados/enviar_comunicado.html', form=form)
+        db.session.add(comunicado)
+        db.session.commit()
+        flash('Comunicado enviado com sucesso!', 'success')
+        return redirect(url_for('listar_comunicados_enviados'))
 
-# Rota para alunos visualizarem comunicados
-@app.route('/aluno/ver_comunicados')
-@login_required
-def ver_comunicados_aluno():
-    if session.get('user_tipo') != 'aluno':
-        flash('Acesso negado!', 'error')
-        return redirect(url_for('index'))
+    return render_template('comunicados/form.html', form=form, titulo='Enviar Novo Comunicado')
+
+# Página para o professor ver os comunicados que ele enviou
+@app.route('/comunicados/enviados')
+def listar_comunicados_enviados():
+    professor_id = session.get('user_id')
+    comunicados = Comunicado.query.filter_by(professor_id=professor_id).order_by(Comunicado.data_publicacao.desc()).all()
+    return render_template('comunicados/listar_professor.html', comunicados=comunicados)
+
+# Página para o aluno ver os comunicados recebidos
+@app.route('/comunicados')
+def listar_comunicados_aluno():
+    aluno_id = session.get('user_id')
+    aluno = Aluno.query.get_or_404(aluno_id)
     
-    comunicados = Comunicado.query.order_by(Comunicado.data_publicacao.desc()).all()
-    return render_template('comunicados/ver_comunicados_aluno.html', comunicados=comunicados)
+    # O aluno vê comunicados para sua turma OU comunicados gerais (sem turma definida)
+    comunicados = Comunicado.query.filter(
+        (Comunicado.turma_id == aluno.turma_id) | (Comunicado.turma_id == None)
+    ).order_by(Comunicado.data_publicacao.desc()).all()
+    
+    return render_template('comunicados/listar_aluno.html', comunicados=comunicados)
 
+# Rota para deletar um comunicado
+@app.route('/comunicados/<int:id>/deletar', methods=['POST'])
+def deletar_comunicado(id):
+    comunicado = Comunicado.query.get_or_404(id)
+    if comunicado.professor_id != session.get('user_id'):
+        flash('Você não tem permissão para excluir este comunicado.', 'error')
+        return redirect(url_for('listar_comunicados_enviados'))
+    
+    db.session.delete(comunicado)
+    db.session.commit()
+    flash('Comunicado excluído com sucesso.', 'success')
+    return redirect(url_for('listar_comunicados_enviados'))
 
 # Função para inicializar o banco de dados
 def init_db():
@@ -1616,8 +1640,6 @@ def carregar_datas_aula(disciplina_id):
     datas_json = [{'value': data.strftime('%Y-%m-%d'), 'text': data.strftime('%d/%m/%Y')} for data in datas_unicas]
     
     return jsonify(datas_json)
-
-# Em app.py, adicione estas novas rotas
 
 # Rota para renderizar a página do calendário do aluno
 @app.route('/calendario/aluno')

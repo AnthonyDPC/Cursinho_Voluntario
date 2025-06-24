@@ -1,131 +1,45 @@
 {% extends "base.html" %}
-
-{% block title %}Meus Materiais de Aula{% endblock %}
-
+{% block title %}Meus Comunicados Enviados{% endblock %}
 {% block content %}
 <div class="main-container">
-    <div class="header-section" style="background: var(--info-gradient);">
-        <div class="header-background"></div>
-        <div class="header-content"> 
-            <h1 class="page-title mb-2" style="background: linear-gradient(45deg, #333, #555); -webkit-background-clip: text; background-clip: text;">
-                <i class="fas fa-book-reader me-3"></i>
-                Materiais de Aula
-            </h1>
-            <p class="page-subtitle" style="color: #444;">
-                <i class="fas fa-folder-open me-2"></i>
-                Acesse os arquivos e links compartilhados pelos seus professores.
-            </p>
+    <div class="header-section" style="background: var(--primary-gradient);">
+        <div class="header-content d-flex justify-content-between align-items-center">
+            <h1 class="page-title"><i class="fas fa-paper-plane me-3"></i>Comunicados Enviados</h1>
+            <a href="{{ url_for('novo_comunicado') }}" class="btn-new"><i class="fas fa-plus-circle"></i><span>Novo Comunicado</span></a>
         </div>
     </div>
 
-    <div class="stats-container mb-4">
-        <div class="row g-4 justify-content-center">
-            <div class="col-lg-3 col-md-6">
-                <div class="stat-card stat-success">
-                    <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
-                    <div class="stat-content">
-                        <h3>{{ materiais|length }}</h3>
-                        <p>Total de Materiais</p>
+    <div class="row g-4 mt-3">
+    {% for comunicado in comunicados %}
+        <div class="col-lg-6">
+            <div class="main-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="card-title">{{ comunicado.titulo }}</h5>
+                        <form method="POST" action="{{ url_for('deletar_comunicado', id=comunicado.id) }}" onsubmit="return confirm('Tem certeza?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir"><i class="fas fa-trash-alt"></i></button>
+                        </form>
                     </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="stat-card stat-primary">
-                     <div class="stat-icon"><i class="fas fa-shapes"></i></div>
-                    <div class="stat-content">
-                        <h3>{{ materiais|groupby('disciplina.nome')|list|length }}</h3>
-                        <p>Disciplinas com Material</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="stat-card stat-info">
-                     <div class="stat-icon"><i class="fas fa-file-download"></i></div>
-                    <div class="stat-content">
-                        <h3>{{ materiais|selectattr('tipo', 'equalto', 'arquivo')|list|length }}</h3>
-                        <p>Arquivos para Baixar</p>
-                    </div>
-                </div>
-            </div>
-             <div class="col-lg-3 col-md-6">
-                <div class="stat-card stat-warning">
-                     <div class="stat-icon"><i class="fas fa-link"></i></div>
-                    <div class="stat-content">
-                        <h3>{{ materiais|selectattr('tipo', 'equalto', 'link')|list|length }}</h3>
-                        <p>Links Externos</p>
+                    <p class="card-text" style="white-space: pre-wrap;">{{ comunicado.conteudo }}</p>
+                    <hr>
+                    <div class="d-flex justify-content-between text-muted small">
+                        <span><i class="fas fa-calendar-alt me-2"></i>{{ comunicado.data_publicacao.strftime('%d/%m/%Y %H:%M') }}</span>
+                        <span><i class="fas fa-users me-2"></i>Para: <strong>{{ comunicado.turma.nome if comunicado.turma else 'Todos os Alunos' }}</strong></span>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="main-card">
-        <div class="card-body p-lg-4">
-            {% if materiais %}
-                <div class="accordion" id="materiaisAccordion">
-                {% for disciplina, mats in materiais|groupby('disciplina.nome') %}
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="heading-{{ loop.index }}">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
-                                    data-bs-target="#collapse-{{ loop.index }}">
-                                <strong class="me-3">{{ disciplina }}</strong>
-                                <span class="badge bg-primary ms-auto">{{ mats|list|length }} Itens</span>
-                            </button>
-                        </h2>
-                        <div id="collapse-{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#materiaisAccordion">
-                            <div class="accordion-body">
-                                <div class="material-list">
-                                    {% for material in mats %}
-                                    <div class="material-list-item">
-                                        <div class="material-icon-wrapper tipo-{{ material.tipo }}">
-                                            <i class="fas 
-                                                {% if material.tipo == 'arquivo' %}fa-file-pdf 
-                                                {% elif material.tipo == 'link' %}fa-link 
-                                                {% else %}fa-file-alt{% endif %}"></i>
-                                        </div>
-                                        <div class="material-content">
-                                            <h6 class="material-title">{{ material.titulo }}</h6>
-                                            <p class="material-description">{{ material.descricao or 'Sem descrição.' }}</p>
-                                            <small class="material-meta">
-                                                <i class="fas fa-user-tie me-1"></i> Prof. {{ material.professor.nome }}
-                                                <span class="mx-2">•</span>
-                                                <i class="fas fa-calendar-alt me-1"></i> {{ material.data_publicacao.strftime('%d/%m/%Y') }}
-                                            </small>
-                                        </div>
-                                        <div class="material-action">
-                                            {% if material.tipo == 'arquivo' %}
-                                            <a href="{{ url_for('static', filename='uploads/' + material.caminho_arquivo) }}" 
-                                               class="btn btn-action-main" download>
-                                                <i class="fas fa-download me-2"></i>Baixar
-                                            </a>
-                                            {% elif material.tipo == 'link' %}
-                                            <a href="{{ material.url }}" target="_blank" 
-                                               class="btn btn-action-main">
-                                                <i class="fas fa-external-link-alt me-2"></i>Acessar
-                                            </a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-                </div>
-            {% else %}
-                 <div class="empty-state" style="padding: 2rem 0;">
-                    <div class="empty-animation">
-                        <div class="empty-icon" style="font-size: 3rem;"><i class="fas fa-folder-open"></i></div>
-                    </div>
-                    <h5 class="empty-title" style="font-size: 1.5rem;">Nenhum material disponível</h5>
-                    <p class="empty-description">Seus professores ainda não publicaram materiais de aula.</p>
-                </div>
-            {% endif %}
+    {% else %}
+        <div class="col-12">
+            <div class="empty-state">
+                <div class="empty-animation"><div class="empty-icon"><i class="fas fa-bullhorn"></i></div></div>
+                <h5 class="empty-title">Nenhum comunicado enviado</h5>
+                <p class="empty-description">Clique em "Novo Comunicado" para enviar sua primeira mensagem.</p>
+            </div>
         </div>
+    {% endfor %}
     </div>
 </div>
-
 <style>
     /* Core Variables */
     :root {
@@ -793,95 +707,104 @@
         100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
-    /* Adicione estas classes específicas para o acordeão de materiais */
-    .accordion-button {
-        font-size: 1.2rem;
-        font-weight: 600;
-        padding: 1.25rem 1.5rem;
-    }
-    .accordion-button:not(.collapsed) {
-        color: white;
-        background: var(--primary-gradient);
-        box-shadow: inset 0 -1px 0 rgba(0,0,0,.125);
-    }
-    .accordion-button:not(.collapsed)::after {
-        filter: brightness(0) invert(1);
-    }
-    .accordion-button:focus {
-        box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
-    }
-    .accordion-item {
-        border: 1px solid #dee2e6;
-        border-radius: 15px !important;
-        margin-bottom: 1rem;
-        overflow: hidden;
-    }
-    .accordion-body {
-        padding: 0.5rem;
-    }
-    .material-list {
+    /* Adicione estas classes específicas para os cards de materiais */
+    .material-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-light);
+        transition: var(--transition);
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        height: 100%;
+        border-top: 4px solid;
     }
-    .material-list-item {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background-color: #f8f9fa;
-        border-radius: 10px;
+    .material-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-medium);
+    }
+    .material-card-header {
+        padding: 1.5rem;
+        text-align: center;
+        border-bottom: 1px solid #f0f0f0;
     }
     .material-icon-wrapper {
-        width: 50px;
-        height: 50px;
+        width: 70px;
+        height: 70px;
         border-radius: 50%;
+        margin: 0 auto 1rem auto;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 1.5rem;
-        flex-shrink: 0;
+        font-size: 1.8rem;
+        box-shadow: var(--shadow-medium);
     }
     .tipo-arquivo { background: var(--primary-gradient); }
     .tipo-link { background: var(--success-gradient); }
     .tipo-texto { background: var(--warning-gradient); }
 
-    .material-content {
-        flex-grow: 1;
-    }
     .material-title {
         font-weight: 700;
         color: #333;
-        margin-bottom: 0.25rem;
+        margin: 0;
+    }
+    .material-card-body {
+        padding: 1.5rem;
+        flex-grow: 1; /* Faz o corpo do card crescer para preencher o espaço */
     }
     .material-description {
-        font-size: 0.9rem;
-        color: #6c757d;
-        margin-bottom: 0.5rem;
+        color: #666;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+    .material-card-footer {
+        padding: 1rem 1.5rem;
+        background-color: #f8f9fa;
+        border-top: 1px solid #f0f0f0;
     }
     .material-meta {
-        font-size: 0.8rem;
-        color: #6c757d;
-        font-style: italic;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 1rem;
     }
-    .material-action {
-        flex-shrink: 0;
+    .material-meta .badge {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+    .material-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
     }
     .btn-action-main {
-        padding: 8px 15px;
-        border-radius: 8px;
+        flex-grow: 1;
+        text-align: center;
+        padding: 10px;
+        border-radius: 10px;
         background: var(--primary-gradient);
         color: white;
         text-decoration: none;
         font-weight: 600;
         transition: var(--transition);
-        display: inline-flex;
-        align-items: center;
     }
     .btn-action-main:hover {
         opacity: 0.9;
-        transform: scale(1.03);
+        transform: scale(1.02);
+        color: white;
+    }
+    .btn-action-delete {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        border: none;
+        background-color: #f1f3f5;
+        color: #868e96;
+        transition: var(--transition);
+    }
+    .btn-action-delete:hover {
+        background-color: #e63946;
         color: white;
     }
 </style>
