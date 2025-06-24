@@ -654,7 +654,6 @@ def dashboard_aluno():
         atividades_recentes=atividades_recentes[:5] # Limita o feed aos 5 itens mais recentes
     )
 
-
 @app.route('/dashboard-professor')
 @login_required
 def dashboard_professor():
