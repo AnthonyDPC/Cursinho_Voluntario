@@ -1,125 +1,87 @@
 {% extends "base.html" %}
 
-{% block title %}Meu Dashboard - {{ aluno.nome }}{% endblock %}
+{% block title %}Meu Painel - {{ aluno.nome }}{% endblock %}
 
 {% block content %}
 <div class="main-container">
-    <div class="header-section" style="background: var(--info-gradient);">
+    <div class="header-section" style="background: var(--primary-gradient);">
         <div class="header-background"></div>
         <div class="header-content d-flex justify-content-between align-items-center flex-wrap">
             <div class="mb-3 mb-md-0">
-                <h1 class="page-title mb-2" style="background: linear-gradient(45deg, #333, #555); -webkit-background-clip: text; background-clip: text;">
-                    <i class="fas fa-user-graduate me-3"></i>
-                    Meu Dashboard
-                </h1>
-                <p class="page-subtitle" style="color: #444;">
-                    <i class="fas fa-chart-line me-2"></i>
-                    Bem-vindo(a), {{ aluno.nome }}! Acompanhe seu progresso.
-                </p>
+                <h1 class="page-title mb-2"><i class="fas fa-user-graduate me-3"></i>Meu Painel</h1>
+                <p class="page-subtitle"><i class="fas fa-heartbeat me-2"></i>Bem-vindo(a) de volta, {{ aluno.nome.split()[0] }}!</p>
             </div>
-            <div class="d-flex gap-2">
-                <a href="{{ url_for('ver_materiais') }}" class="btn-new">
-                    <i class="fas fa-book"></i>
-                    <span>Ver Materiais</span>
-                </a>
+            <div class="d-flex gap-2 flex-wrap justify-content-end">
+                <a href="{{ url_for('listar_comunicados_aluno') }}" class="btn-new" style="background: rgba(255,255,255,0.2);"><i class="fas fa-bullhorn"></i></a>
+                <a href="{{ url_for('minhas_aulas') }}" class="btn-new" style="background: rgba(255,255,255,0.2);"><i class="fas fa-book-open"></i></a>
+                <a href="{{ url_for('listar_faltas_aluno') }}" class="btn-new" style="background: rgba(255,255,255,0.2);"><i class="fas fa-user-clock"></i></a>
+                <a href="{{ url_for('listar_notas') }}" class="btn-new" style="background: rgba(255,255,255,0.2);"><i class="fas fa-star"></i></a>
             </div>
         </div>
     </div>
 
     <div class="stats-container mb-4">
         <div class="row g-4">
-            <div class="col-lg-3 col-md-6">
-                <div class="stat-card stat-primary">
-                    <div class="stat-icon"><i class="fas fa-star-half-alt"></i></div>
-                    <div class="stat-content">
-                        {% if medias %}
-                            <h3>{{ (medias.values()|sum / medias|length)|round(2) }}</h3>
-                        {% else %}
-                            <h3>N/A</h3>
-                        {% endif %}
-                        <p>Média Geral</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="stat-card stat-success">
-                     <div class="stat-icon"><i class="fas fa-book-open"></i></div>
-                    <div class="stat-content">
-                        <h3>{{ disciplinas|length }}</h3>
-                        <p>Disciplinas Cursando</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="stat-card stat-danger">
-                     <div class="stat-icon"><i class="fas fa-calendar-times"></i></div>
-                    <div class="stat-content">
-                        <h3>{{ faltas|length }}</h3>
-                        <p>Total de Faltas</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="stat-card stat-info">
-                     <div class="stat-icon"><i class="fas fa-users-class"></i></div>
-                    <div class="stat-content">
-                        <h3>{{ turma.nome if turma else 'N/A' }}</h3>
-                        <p>Turma Atual</p>
+            <div class="col-lg-3 col-md-6"><div class="stat-card stat-success"><div class="stat-icon"><i class="fas fa-star-half-alt"></i></div><div class="stat-content"><h3>{{ "%.2f"|format(media_geral) }}</h3><p>Média Geral</p></div></div></div>
+            <div class="col-lg-3 col-md-6"><div class="stat-card stat-primary"><div class="stat-icon"><i class="fas fa-check-double"></i></div><div class="stat-content"><h3>{{ "%.1f"|format(taxa_presenca) }}%</h3><p>Taxa de Presença</p></div></div></div>
+            <div class="col-lg-3 col-md-6"><div class="stat-card stat-info"><div class="stat-icon"><i class="fas fa-book-reader"></i></div><div class="stat-content"><h3>{{ disciplinas|length }}</h3><p>Disciplinas Cursando</p></div></div></div>
+            <div class="col-lg-3 col-md-6"><div class="stat-card stat-danger"><div class="stat-icon"><i class="fas fa-calendar-times"></i></div><div class="stat-content"><h3>{{ total_faltas }}</h3><p>Total de Faltas</p></div></div></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="main-card mb-4">
+                <div class="card-body p-4">
+                    <h4 class="card-title-custom"><i class="fas fa-chart-line me-2"></i>Desempenho por Disciplina</h4>
+                    <div class="discipline-performance-list">
+                    {% for disc in disciplinas %}
+                        <div class="discipline-card">
+                            <div class="discipline-header">
+                                <strong class="discipline-name">{{ disc.nome }}</strong>
+                                <span class="professor-name">Prof. {{ disc.professor.nome if disc.professor else 'N/D' }}</span>
+                            </div>
+                            <div class="progress-wrapper">
+                                {% set media = media_por_disciplina.get(disc.id, 0) %}
+                                <div class="progress" style="height: 18px;">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ media * 10 }}%;" aria-valuenow="{{ media }}" aria-valuemin="0" aria-valuemax="10">
+                                        {{ "%.1f"|format(media) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Suas disciplinas aparecerão aqui quando as primeiras notas forem lançadas.</p>
+                    {% endfor %}
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="main-card">
-        <div class="card-body p-4">
-            <h4 class="card-title-custom"><i class="fas fa-chart-bar me-2"></i>Meu Desempenho Acadêmico</h4>
-
-            {% if disciplinas %}
-                <div class="accordion" id="disciplinasAccordion">
-                {% for disciplina in disciplinas %}
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="heading-{{ disciplina.id }}">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ disciplina.id }}">
-                                <strong class="me-3">{{ disciplina.nome }}</strong>
-                                {% set media = medias.get(disciplina.nome, 0) %}
-                                <div class="progress me-3" style="width: 150px; height: 20px;">
-                                    <div class="progress-bar fw-bold" role="progressbar" style="width: {{ media * 10 }}%;" aria-valuenow="{{ media }}" aria-valuemin="0" aria-valuemax="10">{{ media }}</div>
-                                </div>
-                                <span class="badge bg-danger ms-auto">{{ faltas_por_disciplina.get(disciplina.nome, 0) }} Faltas</span>
-                            </button>
-                        </h2>
-                        <div id="collapse-{{ disciplina.id }}" class="accordion-collapse collapse" data-bs-parent="#disciplinasAccordion">
-                            <div class="accordion-body">
-                                <p><strong>Professor(a):</strong> {{ disciplina.professor.nome if disciplina.professor else 'Não definido' }}</p>
-                                <h5><i class="fas fa-clipboard-list me-2"></i>Notas Detalhadas</h5>
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-borderless">
-                                        <tbody>
-                                            {% for nota in notas if nota.disciplina_id == disciplina.id %}
-                                            <tr>
-                                                <td class="fw-bold">{{ nota.tipo }}</td>
-                                                <td><span class="badge fs-6" style="background-color: var(--primary-gradient);">{{ nota.valor }}</span></td>
-                                                <td class="text-muted">{{ nota.data.strftime('%d/%m/%Y') }}</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
+        <div class="col-lg-5">
+            <div class="main-card mb-4">
+                <div class="card-body p-4">
+                    <h4 class="card-title-custom"><i class="fas fa-history me-2"></i>Atividade Recente</h4>
+                    <ul class="activity-feed">
+                    {% for atividade in atividades_recentes %}
+                        <li class="activity-item">
+                            <div class="activity-icon bg-{{ atividade.cor }}">
+                                <i class="fas {{ atividade.icone }}"></i>
                             </div>
-                        </div>
-                    </div>
-                {% endfor %}
+                            <div class="activity-content">
+                                <p class="mb-0">{{ atividade.descricao }}</p>
+                                <small class="text-muted">{{ atividade.data.strftime('%d de %B, %H:%M') }}</small>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li class="activity-item">
+                             <div class="activity-icon bg-secondary"><i class="fas fa-coffee"></i></div>
+                            <div class="activity-content"><p class="mb-0">Nenhuma atividade recente para mostrar.</p></div>
+                        </li>
+                    {% endfor %}
+                    </ul>
                 </div>
-            {% else %}
-                 <div class="empty-state" style="padding: 2rem 0;">
-                    <div class="empty-animation">
-                        <div class="empty-icon" style="font-size: 3rem;"><i class="fas fa-folder-open"></i></div>
-                    </div>
-                    <h5 class="empty-title" style="font-size: 1.5rem;">Nenhum desempenho para exibir</h5>
-                    <p class="empty-description">Suas notas e faltas aparecerão aqui assim que forem lançadas.</p>
-                </div>
-            {% endif %}
+            </div>
         </div>
     </div>
 </div>
@@ -429,408 +391,24 @@
         vertical-align: middle;
     }
 
-    /* Table Content Styling */
-    .codigo-container {
-        display: flex;
-        justify-content: center;
-    }
-
-    .subject-code {
-        background: var(--success-gradient);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 25px;
-        font-weight: 700;
-        font-size: 0.9rem;
-        display: inline-block;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        box-shadow: var(--shadow-light);
-    }
-
-    .disciplina-info {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-
-    .disciplina-avatar {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: var(--primary-gradient);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.2rem;
-        box-shadow: var(--shadow-light);
-    }
-
-    .subject-name {
-        font-weight: 700;
-        color: #333;
-        font-size: 1.1rem;
-        display: block;
-    }
-
-    .professor-info {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-
-    .professor-avatar {
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        background: var(--secondary-gradient);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1rem;
-        box-shadow: var(--shadow-light);
-    }
-
-    .professor-name {
-        font-weight: 600;
-        color: #333;
-        display: block;
-    }
-
-    .workload-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .workload {
-        background: var(--warning-gradient);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 25px;
-        font-weight: 700;
-        font-size: 1rem;
-        margin-bottom: 5px;
-        display: inline-block;
-        box-shadow: var(--shadow-light);
-    }
-
-    .category-badge {
-        padding: 10px 20px;
-        border-radius: 25px;
-        font-weight: 700;
-        font-size: 0.9rem;
-        display: inline-flex;
-        align-items: center;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        box-shadow: var(--shadow-light);
-    }
-
-    .category-exatas {
-        background: var(--exatas-gradient);
-        color: white;
-    }
-
-    .category-humanas {
-        background: var(--humanas-gradient);
-        color: white;
-    }
-
-    .category-biologicas {
-        background: var(--biologicas-gradient);
-        color: white;
-    }
-
-    /* Enhanced Action Buttons */
-    .action-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 8px;
-    }
-
-    .action-btn {
-        border-radius: 12px;
-        padding: 12px 15px;
-        transition: var(--transition);
-        border: none;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .action-btn::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.3);
-        transition: all 0.3s;
-        transform: translate(-50%, -50%);
-    }
-
-    .action-btn:hover::before {
-        width: 100%;
-        height: 100%;
-    }
-
-    .action-btn:hover {
-        transform: translateY(-3px) scale(1.1);
-        box-shadow: var(--shadow-medium);
-    }
-
-    .btn-edit {
-        background: var(--primary-gradient);
-        color: white;
-    }
-
-    .btn-delete {
-        background: var(--danger-gradient);
-        color: white;
-    }
-
-    .btn-info {
-        background: var(--info-gradient);
-        color: white;
-    }
-
-    /* Enhanced Empty State */
-    .empty-state {
-        padding: 5rem 2rem;
-        text-align: center;
-        position: relative;
-    }
-
-    .empty-animation {
-        position: relative;
-        margin-bottom: 2rem;
-    }
-
-    .empty-icon {
-        font-size: 5rem;
-        background: var(--primary-gradient);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: pulse 2s infinite;
-        position: relative;
-        z-index: 2;
-    }
-
-    .empty-particles {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-
-    .particle {
-        position: absolute;
-        width: 10px;
-        height: 10px;
-        background: var(--primary-gradient);
-        border-radius: 50%;
-        animation: float 3s ease-in-out infinite;
-    }
-
-    .particle:nth-child(1) {
-        top: -60px;
-        left: -30px;
-        animation-delay: 0s;
-    }
-
-    .particle:nth-child(2) {
-        top: -40px;
-        right: -40px;
-        animation-delay: 1s;
-    }
-
-    .particle:nth-child(3) {
-        bottom: -50px;
-        left: -20px;
-        animation-delay: 2s;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.7; transform: scale(1.1); }
-    }
-
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); opacity: 0.7; }
-        50% { transform: translateY(-20px); opacity: 1; }
-    }
-
-    .empty-title {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #333;
-        margin-bottom: 1rem;
-    }
-
-    .empty-description {
-        color: #666;
-        margin-bottom: 3rem;
-        font-size: 1.2rem;
-        line-height: 1.6;
-    }
-
-    .btn-primary-custom {
-        background: var(--primary-gradient);
-        border: none;
-        border-radius: 50px;
-        padding: 15px 40px;
-        color: white;
-        font-weight: 700;
-        text-decoration: none;
-        transition: var(--transition);
-        box-shadow: var(--shadow-medium);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .btn-primary-custom:hover {
-        transform: translateY(-3px) scale(1.05);
-        box-shadow: var(--shadow-heavy);
-        color: white;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .main-container {
-            padding: 1rem;
-        }
-        
-        .header-section {
-            padding: 2rem;
-        }
-        
-        .page-title {
-            font-size: 2rem;
-        }
-        
-        .stats-container .col-md-3 {
-            margin-bottom: 1rem;
-        }
-        
-        .search-filter-bar {
-            padding: 1.5rem;
-        }
-        
-        .filter-buttons {
-            justify-content: center;
-            margin-top: 1rem;
-        }
-        
-        .custom-table {
-            font-size: 0.9rem;
-        }
-        
-        .action-btn {
-            padding: 10px 12px;
-            margin: 2px;
-        }
-        
-        .turma-info {
-            flex-direction: column;
-            text-align: center;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .page-title {
-            font-size: 1.8rem;
-        }
-        
-        .btn-new {
-            padding: 12px 25px;
-            font-size: 0.9rem;
-        }
-        
-        .stat-card {
-            padding: 1.5rem;
-        }
-        
-        .stat-content h3 {
-            font-size: 2rem;
-        }
-    }
-
-    /* Utility Classes */
-    .text-muted-light {
-        color: #aaa !important;
-        font-size: 0.85rem;
-    }
-
-    /* Loading Animation */
-    .loading {
-        opacity: 0.6;
-        pointer-events: none;
-    }
-
-    .loading::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 50px;
-        height: 50px;
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid #667eea;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        transform: translate(-50%, -50%);
-    }
-
-    @keyframes spin {
-        0% { transform: translate(-50%, -50%) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg); }
-    }
+    /* Adicione estes estilos específicos para o dashboard do aluno */
+    .card-title-custom { font-weight: 700; color: #333; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 3px solid; border-image-slice: 1; border-image-source: var(--primary-gradient); }
+    .discipline-performance-list { display: flex; flex-direction: column; gap: 1.5rem; }
+    .discipline-card { background: #f8f9fa; padding: 1rem 1.5rem; border-radius: 12px; border-left: 5px solid; border-image-slice: 1; border-image-source: var(--success-gradient); }
+    .discipline-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .discipline-name { font-weight: 600; font-size: 1.1rem; color: #343a40; }
+    .professor-name { font-size: 0.9rem; color: #6c757d; }
+    .progress-bar { font-weight: 700; background: var(--success-gradient); }
     
-
-
-
-    /* Add these specific styles for the dashboard page */
-    .card-title-custom {
-        font-weight: 700;
-        color: #333;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 3px solid;
-        border-image-slice: 1;
-        border-image-source: var(--primary-gradient);
-    }
-    .accordion-button {
-        font-size: 1.1rem;
-        font-weight: 500;
-    }
-    .accordion-button:not(.collapsed) {
-        color: white;
-        background: var(--primary-gradient);
-        box-shadow: inset 0 -1px 0 rgba(0,0,0,.125);
-    }
-    .accordion-button:not(.collapsed)::after {
-        filter: brightness(0) invert(1);
-    }
-    .accordion-button:focus {
-        box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
-    }
-    .accordion-item {
-        border: 1px solid #dee2e6;
-        border-radius: 10px;
-        margin-bottom: 10px;
-        overflow: hidden;
-    }
-    .progress {
-        background-color: #e9ecef;
-        border-radius: 10px;
-    }
-    .progress-bar {
-        background: var(--success-gradient);
-    }
+    .activity-feed { list-style: none; padding: 0; margin: 0; }
+    .activity-item { display: flex; align-items: flex-start; gap: 1rem; padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid #f0f0f0; }
+    .activity-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .activity-icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
+    .activity-icon i { font-size: 1rem; }
+    .activity-content p { font-weight: 500; color: #495057; line-height: 1.4; }
+    .activity-content small { font-size: 0.8rem; }
+    .bg-success { background: var(--success-gradient); }
+    .bg-danger { background: var(--danger-gradient); }
+    .bg-info { background: var(--info-gradient); }
 </style>
 {% endblock %}

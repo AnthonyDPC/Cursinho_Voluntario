@@ -570,44 +570,90 @@ def index():
 @app.route('/dashboard-aluno')
 @login_required
 def dashboard_aluno():
+    # Validação de permissão
     if session.get('user_tipo') != 'aluno':
         flash('Acesso negado!', 'error')
         return redirect(url_for('index'))
 
     aluno_id = session.get('user_id')
     aluno = Aluno.query.get(aluno_id)
-    notas = Nota.query.filter_by(aluno_id=aluno_id).all()
-    faltas = Falta.query.filter_by(aluno_id=aluno_id).all()
 
-    # Obter disciplinas únicas do aluno
+    if not aluno:
+        flash('Aluno não encontrado.', 'error')
+        session.clear()
+        return redirect(url_for('login'))
+
+    # --- Coleta de dados brutos ---
+    notas = Nota.query.filter_by(aluno_id=aluno_id).order_by(Nota.data.desc()).all()
+    faltas = Falta.query.filter_by(aluno_id=aluno_id).order_by(Falta.data.desc()).all()
     disciplinas_ids = {nota.disciplina_id for nota in notas}
-    disciplinas = Disciplina.query.filter(Disciplina.id.in_(disciplinas_ids)).all()
+    disciplinas = Disciplina.query.filter(Disciplina.id.in_(disciplinas_ids)).all() if disciplinas_ids else []
 
-    # Agrupar médias por disciplina
+    # --- Cálculos para os Cards de Estatísticas ---
     media_por_disciplina = {}
-    for nota in notas:
-        nome_disc = nota.disciplina.nome
-        if nome_disc not in media_por_disciplina:
-            media_por_disciplina[nome_disc] = []
-        media_por_disciplina[nome_disc].append(nota.valor)
-    medias = {disc: round(sum(valores)/len(valores), 2) for disc, valores in media_por_disciplina.items()}
+    if notas:
+        from collections import defaultdict
+        notas_agrupadas = defaultdict(list)
+        for nota in notas:
+            notas_agrupadas[nota.disciplina_id].append(nota.valor)
+        
+        for disc_id, valores in notas_agrupadas.items():
+            media_por_disciplina[disc_id] = sum(valores) / len(valores)
 
-    # Contar faltas por disciplina
-    faltas_por_disciplina = {}
-    for falta in faltas:
-        nome_disc = falta.disciplina_rel.nome
-        faltas_por_disciplina[nome_disc] = faltas_por_disciplina.get(nome_disc, 0) + 1
+    media_geral = sum(media_por_disciplina.values()) / len(media_por_disciplina) if media_por_disciplina else 0.0
 
+    total_aulas_registradas = Aula.query.filter(Aula.disciplina_id.in_(disciplinas_ids)).count() if disciplinas_ids else 0
+    taxa_presenca = ((total_aulas_registradas - len(faltas)) / total_aulas_registradas * 100) if total_aulas_registradas > 0 else 100.0
+
+    # --- Lógica para o Feed de Atividades Recentes ---
+    atividades_recentes = []
+    # Últimas notas
+    for nota in notas[:3]: # Pega as 3 últimas notas
+        atividades_recentes.append({
+            'data': nota.data,
+            'tipo': 'nota',
+            'icone': 'fa-star',
+            'cor': 'success',
+            'descricao': f"Nota {nota.valor:.1f} em {nota.disciplina.nome} ({nota.tipo})."
+        })
+    # Últimas faltas
+    for falta in faltas[:3]: # Pega as 3 últimas faltas
+        atividades_recentes.append({
+            'data': falta.data,
+            'tipo': 'falta',
+            'icone': 'fa-user-clock',
+            'cor': 'danger',
+            'descricao': f"Falta registrada em {falta.disciplina_rel.nome}."
+        })
+    # Últimos comunicados
+    comunicados = Comunicado.query.filter(
+        (Comunicado.turma_id == aluno.turma_id) | (Comunicado.turma_id == None)
+    ).order_by(Comunicado.data_publicacao.desc()).limit(3).all()
+    for com in comunicados:
+        atividades_recentes.append({
+            'data': com.data_publicacao,
+            'tipo': 'comunicado',
+            'icone': 'fa-bullhorn',
+            'cor': 'info',
+            'descricao': f"Novo comunicado: '{com.titulo}' de Prof. {com.professor.nome}."
+        })
+
+    # Ordena todas as atividades por data, da mais recente para a mais antiga
+    atividades_recentes.sort(key=lambda x: x['data'], reverse=True)
+    
     return render_template(
         'dashboard/aluno.html',
         aluno=aluno,
-        notas=notas,
-        faltas=faltas,
-        disciplinas=disciplinas,
-        medias=medias,
         turma=aluno.turma,
-        faltas_por_disciplina=faltas_por_disciplina
+        disciplinas=disciplinas,
+        media_por_disciplina=media_por_disciplina,
+        # Passando as novas estatísticas para o template
+        media_geral=media_geral,
+        taxa_presenca=taxa_presenca,
+        total_faltas=len(faltas),
+        atividades_recentes=atividades_recentes[:5] # Limita o feed aos 5 itens mais recentes
     )
+
 
 @app.route('/dashboard-professor')
 @login_required
@@ -620,17 +666,29 @@ def dashboard_professor():
     professor = Professor.query.get(professor_id)
     disciplinas = Disciplina.query.filter_by(professor_id=professor_id).all()
 
+    # Dicionários para armazenar dados agregados
     alunos_por_disciplina = {}
     faltas_por_disciplina = {}
+    unique_student_ids = set()
 
     for disciplina in disciplinas:
-        # Alunos que têm notas ou faltas nessa disciplina
-        alunos_ids = set(nota.aluno_id for nota in disciplina.notas)
-        alunos = Aluno.query.filter(Aluno.id.in_(alunos_ids)).all()
-        alunos_por_disciplina[disciplina.nome] = alunos
-
+        # MELHORIA: Busca alunos pela turma associada à disciplina, que é mais preciso.
+        if disciplina.turma:
+            alunos_na_disciplina = disciplina.turma.alunos
+        else:
+            alunos_na_disciplina = []
+        
+        alunos_por_disciplina[disciplina.nome] = alunos_na_disciplina
+        for aluno in alunos_na_disciplina:
+            unique_student_ids.add(aluno.id)
+            
+        # Busca faltas
         faltas = Falta.query.filter_by(disciplina_id=disciplina.id).all()
         faltas_por_disciplina[disciplina.nome] = faltas
+
+    # MELHORIA: Cálculo de estatísticas adicionais para os cards
+    total_aulas_registradas = Aula.query.filter_by(professor_id=professor_id).count()
+    total_alunos_unicos = len(unique_student_ids)
 
     return render_template(
         'dashboard/professor.html',
@@ -638,8 +696,10 @@ def dashboard_professor():
         disciplinas=disciplinas,
         alunos_por_disciplina=alunos_por_disciplina,
         faltas_por_disciplina=faltas_por_disciplina,
-        alunos_qtd={d.nome: len(alunos_por_disciplina[d.nome]) for d in disciplinas},
-        faltas_qtd={d.nome: len(faltas_por_disciplina[d.nome]) for d in disciplinas}
+        alunos_qtd={d.nome: len(alunos_por_disciplina.get(d.nome, [])) for d in disciplinas},
+        faltas_qtd={d.nome: len(faltas_por_disciplina.get(d.nome, [])) for d in disciplinas},
+        total_alunos_unicos=total_alunos_unicos,
+        total_aulas_registradas=total_aulas_registradas
     )
 
 # Rotas para Usuários (apenas admin)
