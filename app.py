@@ -386,6 +386,11 @@ class ComunicadoForm(FlaskForm):
     # O valor 0 será usado para "Todos os Alunos"
     turma_id = SelectField('Enviar Para', coerce=int, validators=[DataRequired()])
 
+class AlterarSenhaForm(FlaskForm):
+    # MELHORIA: Usando o validador EqualTo para garantir que as senhas coincidem.
+    senha_atual = PasswordField('Senha Atual', validators=[DataRequired()])
+    nova_senha = PasswordField('Nova Senha', validators=[DataRequired(), Length(min=6)])
+    confirmacao_senha = PasswordField('Confirmar Nova Senha', validators=[DataRequired()])
 # Página para o professor escrever um novo comunicado
 @app.route('/comunicados/novo', methods=['GET', 'POST'])
 def novo_comunicado():
@@ -1995,58 +2000,29 @@ def relatorio_notas_aluno(aluno_id):
 @app.route('/alterar-senha', methods=['GET', 'POST'])
 @login_required
 def alterar_senha():
-    if request.method == 'POST':
-        senha_atual = request.form.get('senha_atual')
-        nova_senha = request.form.get('nova_senha')
-        confirmar_senha = request.form.get('confirmar_senha')
-        
-        if nova_senha != confirmar_senha:
-            flash('As senhas não coincidem!', 'error')
-            return render_template('auth/alterar_senha.html')
-        
-        if len(nova_senha) < 6:
-            flash('A nova senha deve ter pelo menos 6 caracteres!', 'error')
-            return render_template('auth/alterar_senha.html')
-        
-        try:
-            user_tipo = session.get('user_tipo')
-            user_id = session.get('user_id')
-            
-            if user_tipo in ['admin', 'secretaria']:
-                usuario = Usuario.query.get(user_id)
-                if usuario and usuario.check_password(senha_atual):
-                    usuario.set_password(nova_senha)
-                    db.session.commit()
-                    flash('Senha alterada com sucesso!', 'success')
-                    return redirect(url_for('index'))
-                else:
-                    flash('Senha atual incorreta!', 'error')
-            
-            elif user_tipo == 'professor':
-                professor = Professor.query.get(user_id)
-                if professor and professor.check_password(senha_atual):
-                    professor.set_password(nova_senha)
-                    db.session.commit()
-                    flash('Senha alterada com sucesso!', 'success')
-                    return redirect(url_for('index'))
-                else:
-                    flash('Senha atual incorreta!', 'error')
-            
-            elif user_tipo == 'aluno':
-                aluno = Aluno.query.get(user_id)
-                if aluno and aluno.check_password(senha_atual):
-                    aluno.set_password(nova_senha)
-                    db.session.commit()
-                    flash('Senha alterada com sucesso!', 'success')
-                    return redirect(url_for('index'))
-                else:
-                    flash('Senha atual incorreta!', 'error')
-                    
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Erro ao alterar senha: {str(e)}', 'error')
+    # MELHORIA: Rota reescrita para usar o novo AlterarSenhaForm e ser mais limpa.
+    form = AlterarSenhaForm()
+    user_id = session.get('user_id')
+    user_tipo = session.get('user_tipo')
+
+    if form.validate_on_submit():
+        # Lógica unificada para encontrar o usuário
+        if user_tipo == 'professor':
+            user = Professor.query.get(user_id)
+        elif user_tipo == 'aluno':
+            user = Aluno.query.get(user_id)
+        else:
+            user = Usuario.query.get(user_id)
+
+        if user and user.check_password(form.senha_atual.data):
+            user.set_password(form.nova_senha.data)
+            db.session.commit()
+            flash('Senha alterada com sucesso!', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Senha atual incorreta.', 'error')
     
-    return render_template('auth/alterar_senha.html')
+    return render_template('auth/alterar_senha.html', form=form, titulo='Alterar Senha')
 
 # Rota para perfil do usuário
 @app.route('/perfil')

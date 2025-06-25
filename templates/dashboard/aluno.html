@@ -8,8 +8,8 @@
         <div class="header-background"></div>
         <div class="header-content d-flex justify-content-between align-items-center flex-wrap">
             <div class="mb-3 mb-md-0">
-                <h1 class="page-title mb-2"><i class="fas fa-user-graduate me-3"></i>Meu Painel</h1>
-                <p class="page-subtitle"><i class="fas fa-heartbeat me-2"></i>Bem-vindo(a) de volta, {{ aluno.nome.split()[0] }}!</p>
+                <h1 class="page-title mb-2" style="background: linear-gradient(45deg, #333, #555); -webkit-background-clip: text; background-clip: text;"><i class="fas fa-user-graduate me-3"></i>Meu Painel</h1>
+                <p class="page-subtitle" style="color: #444;"><i class="fas fa-heartbeat me-2"></i>Bem-vindo(a) de volta, {{ aluno.nome.split()[0] }}!</p>
             </div>
             <div class="d-flex gap-2 flex-wrap justify-content-end">
                 <a href="{{ url_for('listar_comunicados_aluno') }}" class="btn-new" style="background: rgba(255,255,255,0.2);"><i class="fas fa-bullhorn"></i></a>

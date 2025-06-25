@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Alterar Minha Senha{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div class="d-flex justify-content-center">
+        <div class="col-lg-6">
+            <div class="header-section" style="margin-bottom: 2rem; background: var(--primary-gradient);">
+                <div class="header-content text-center">
+                    <h1 class="page-title mb-2">
+                        <i class="fas fa-key me-3"></i>
+                        Alterar Senha
+                    </h1>
+                    <p class="page-subtitle">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Para sua segurança, informe sua senha atual.
+                    </p>
+                </div>
+            </div>
+
+            <div class="main-card">
+                <div class="card-body p-4 p-md-5">
+                    <form method="POST" action="">
+                        {# Essencial para segurança (CSRF) #}
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-4">
+                            {{ form.senha_atual.label(class="form-label fw-bold") }}
+                            {{ form.senha_atual(class="form-control form-control-lg", placeholder="Digite sua senha atual") }}
+                            {% if form.senha_atual.errors %}
+                                <div class="invalid-feedback d-block mt-2">
+                                    {{ form.senha_atual.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="mb-3">
+                            {{ form.nova_senha.label(class="form-label fw-bold") }}
+                            {{ form.nova_senha(class="form-control form-control-lg", placeholder="Mínimo de 6 caracteres") }}
+                            {% if form.nova_senha.errors %}
+                                <div class="invalid-feedback d-block mt-2">
+                                    {{ form.nova_senha.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.confirmacao_senha.label(class="form-label fw-bold") }}
+                            {{ form.confirmacao_senha(class="form-control form-control-lg", placeholder="Confirme a nova senha") }}
+                             {% if form.confirmacao_senha.errors %}
+                                <div class="invalid-feedback d-block mt-2">
+                                    {{ form.confirmacao_senha.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" style="background: var(--primary-gradient); border: none;">
+                                <i class="fas fa-save me-2"></i>
+                                Salvar Nova Senha
+                            </button>
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Cole aqui o bloco de CSS completo de outro template para garantir a consistência visual */
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        --shadow-light: 0 5px 15px rgba(0,0,0,0.08);
+        --shadow-medium: 0 10px 30px rgba(0,0,0,0.12);
+        --shadow-heavy: 0 20px 60px rgba(0,0,0,0.15);
+        --border-radius: 20px;
+    }
+    .main-container { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+    .header-section { border-radius: var(--border-radius); padding: 2.5rem; color: white; box-shadow: var(--shadow-heavy); position: relative; overflow: hidden; }
+    .header-content { position: relative; z-index: 2; }
+    .page-title { font-size: 2.5rem; font-weight: 800; }
+    .page-subtitle { font-size: 1.1rem; opacity: 0.95; }
+    .main-card { background: white; border-radius: var(--border-radius); box-shadow: var(--shadow-medium); border: none; overflow: hidden; }
+    .invalid-feedback.d-block { font-weight: 600; }
+</style>
+{% endblock %}
