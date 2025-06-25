@@ -391,6 +391,7 @@ class AlterarSenhaForm(FlaskForm):
     senha_atual = PasswordField('Senha Atual', validators=[DataRequired()])
     nova_senha = PasswordField('Nova Senha', validators=[DataRequired(), Length(min=6)])
     confirmacao_senha = PasswordField('Confirmar Nova Senha', validators=[DataRequired()])
+
 # Página para o professor escrever um novo comunicado
 @app.route('/comunicados/novo', methods=['GET', 'POST'])
 def novo_comunicado():
